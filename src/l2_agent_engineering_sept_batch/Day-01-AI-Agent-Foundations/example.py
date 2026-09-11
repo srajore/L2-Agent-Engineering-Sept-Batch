@@ -11,6 +11,6 @@ def choose_action(request):
     return "Continue with the safe workflow"
 
 
-request = understand_request("Delete an old user account")
+request = understand_request("how to reset paassword")
 action = choose_action(request)
 print(action)
