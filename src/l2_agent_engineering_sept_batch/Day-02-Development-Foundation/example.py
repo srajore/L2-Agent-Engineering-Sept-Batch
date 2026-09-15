@@ -4,7 +4,7 @@ import sys
 
 import ollama
 
-sys.stdout.reconfigure(encoding="utf-8")  # the model may answer with punctuation Command Prompt cannot print
+#sys.stdout.reconfigure(encoding="utf-8")  # the model may answer with punctuation Command Prompt cannot print
 
 
 MODEL = "gpt-oss:120b-cloud"
@@ -19,4 +19,6 @@ response = ollama.chat(
     ],
 )
 
-print("Category:", response["message"]["content"])
+#print("Category:", response["message"]["content"])
+
+print(response)
