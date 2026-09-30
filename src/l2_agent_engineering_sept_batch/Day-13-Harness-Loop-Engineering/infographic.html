@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day 13 — Harness &amp; Loop Engineering</title>
+<style>
+  :root{
+    --bg:#14171b;
+    --panel:#1c2127;
+    --panel-2:#20262d;
+    --border:#2c333b;
+    --accent:#d9932b;
+    --accent-dim:#8a6432;
+    --slate:#3e5064;
+    --slate-light:#5b7290;
+    --text:#e8ecef;
+    --text-dim:#9aa5ad;
+    --heading:#f5f7f3;
+    --good:#4caf7d;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);}
+  body{
+    font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.55;
+    padding:0 16px 64px;
+  }
+  .wrap{max-width:1040px;margin:0 auto;}
+
+  /* ---------- header ---------- */
+  header{
+    padding:48px 0 32px;
+    border-bottom:1px solid var(--border);
+    margin-bottom:36px;
+  }
+  .eyebrow{
+    display:inline-block;
+    font:700 12px/1 "Consolas","SFMono-Regular",monospace;
+    letter-spacing:.14em;
+    color:var(--accent);
+    background:rgba(217,147,43,.12);
+    border:1px solid var(--accent-dim);
+    padding:6px 10px;
+    border-radius:999px;
+    margin-bottom:18px;
+  }
+  h1{
+    margin:0 0 10px;
+    color:var(--heading);
+    font-size:clamp(28px,5vw,42px);
+    letter-spacing:-.01em;
+  }
+  .tagline{
+    font-size:18px;
+    color:var(--text-dim);
+    max-width:700px;
+  }
+
+  /* ---------- section titles ---------- */
+  h2{
+    color:var(--heading);
+    font-size:22px;
+    margin:0 0 6px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  h2 .num{
+    font:700 13px/1 "Consolas",monospace;
+    color:#241a0a;
+    background:var(--accent);
+    width:26px;height:26px;
+    border-radius:50%;
+    display:inline-flex;align-items:center;justify-content:center;
+    flex:none;
+  }
+  .section{margin-bottom:56px;}
+  .section-sub{color:var(--text-dim);font-size:15px;margin:0 0 22px;max-width:760px;}
+  .section-sub b{color:var(--text);}
+
+  /* ---------- stat callout ---------- */
+  .stat{
+    display:flex;gap:20px;align-items:center;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-left:4px solid var(--accent);
+    border-radius:10px;
+    padding:20px 22px;
+    margin-bottom:56px;
+  }
+  .stat .big{
+    font:700 30px/1 "Consolas",monospace;
+    color:var(--accent);
+    flex:none;
+  }
+  .stat p{margin:0;color:var(--text-dim);font-size:14.5px;}
+  .stat strong{color:var(--text);}
+
+  /* ---------- ladder ---------- */
+  .ladder{display:flex;gap:14px;flex-wrap:wrap;}
+  .rung{
+    flex:1 1 220px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:16px 18px;
+    position:relative;
+  }
+  .rung.current{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;}
+  .rung .tag{font:700 11px/1 "Consolas",monospace;letter-spacing:.08em;color:var(--text-dim);text-transform:uppercase;}
+  .rung.current .tag{color:var(--accent);}
+  .rung h3{margin:8px 0 6px;font-size:16px;color:var(--heading);}
+  .rung p{margin:0;font-size:13.5px;color:var(--text-dim);}
+  .arrow-between{
+    display:flex;align-items:center;justify-content:center;
+    color:var(--text-dim);font-size:20px;flex:0 0 20px;
+  }
+
+  /* ---------- concentric rings diagram ---------- */
+  .rings-wrap{
+    display:flex;align-items:center;gap:36px;flex-wrap:wrap;justify-content:center;
+    background:var(--panel);border:1px solid var(--border);border-radius:14px;
+    padding:28px;margin-bottom:24px;
+  }
+  .rings{width:260px;height:260px;flex:none;}
+  .rings-legend{display:flex;flex-direction:column;gap:14px;min-width:240px;max-width:380px;}
+  .legend-row{display:flex;align-items:flex-start;gap:12px;}
+  .legend-row .dot{width:14px;height:14px;border-radius:50%;flex:none;margin-top:3px;}
+  .legend-row div{display:flex;flex-direction:column;gap:2px;}
+  .legend-row b{color:var(--heading);font-size:14px;}
+  .legend-row span{color:var(--text-dim);font-size:13px;}
+
+  /* ---------- comparison table ---------- */
+  .compare-table-wrap{overflow-x:auto;}
+  table.compare{width:100%;min-width:620px;border-collapse:collapse;background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+  table.compare thead th{
+    font:700 12px "Consolas",monospace;color:var(--heading);background:var(--panel-2);
+    padding:12px 14px;border-bottom:1px solid var(--border);text-align:left;
+  }
+  table.compare thead th:first-child{background:var(--panel);}
+  table.compare tbody td{padding:13px 14px;font-size:13px;color:var(--text-dim);border-bottom:1px solid var(--border);vertical-align:top;}
+  table.compare tbody tr:last-child td{border-bottom:none;}
+  table.compare td.rowlabel{font:700 11px "Consolas",monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--text-dim);white-space:nowrap;background:var(--panel-2);}
+
+  /* ---------- flow diagram ---------- */
+  .diagram{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:36px 24px 28px;
+  }
+  .flow-row{
+    display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:nowrap;
+  }
+  .node{
+    font:700 14px/1 "Consolas",monospace;
+    padding:14px 18px;
+    border-radius:8px;
+    text-align:center;
+    white-space:nowrap;
+  }
+  .node.endpoint{background:transparent;border:1px solid var(--text-dim);color:var(--text-dim);}
+  .node.loopbox{background:var(--slate);color:var(--heading);min-width:90px;}
+  .chevron{color:var(--text-dim);font-size:18px;flex:none;}
+  .loop-region{
+    position:relative;
+    display:flex;flex-direction:column;align-items:center;gap:14px;
+    padding:26px 24px 20px;
+    margin:0 4px;
+    border:1.5px dashed var(--slate-light);
+    border-radius:12px;
+  }
+  .loop-region .loop-label{
+    position:absolute;top:-11px;left:16px;
+    background:var(--panel);
+    padding:0 8px;
+    font:700 11px/1 "Consolas",monospace;
+    letter-spacing:.08em;
+    color:var(--slate-light);
+  }
+  .loop-boxes{display:flex;align-items:center;gap:16px;}
+  .retry-caption{
+    font:11.5px "Consolas",monospace;color:var(--slate-light);
+    display:flex;align-items:center;gap:6px;
+    text-align:center;
+    max-width:280px;
+  }
+  .exits{
+    display:flex;justify-content:center;gap:10px;margin-top:24px;flex-wrap:wrap;
+  }
+  .exit-chip{
+    font:12px "Consolas",monospace;
+    padding:7px 12px;
+    border-radius:999px;
+    border:1px solid;
+  }
+  .exit-chip.pass{color:var(--good);border-color:var(--good);background:rgba(76,175,125,.08);}
+  .exit-chip.budget,.exit-chip.cap{color:var(--slate-light);border-color:var(--slate-light);background:rgba(91,114,144,.08);}
+  .exits-caption{text-align:center;color:var(--text-dim);font-size:12.5px;margin-top:10px;}
+  .exits-caption b{color:var(--text);}
+
+  .sub-title{
+    color:var(--heading);font-size:14px;margin:28px 0 14px;
+    font:700 12px "Consolas",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);
+  }
+
+  /* ---------- run meters (loop section) ---------- */
+  .run-row{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:12px;}
+  .run-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;}
+  .run-name{font:700 13px "Consolas",monospace;color:var(--heading);}
+  .meter{display:flex;align-items:center;gap:10px;margin-top:8px;}
+  .meter-label{width:66px;flex:none;font:11px "Consolas",monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;}
+  .meter-track{flex:1;height:10px;background:#0e1116;border-radius:6px;overflow:hidden;border:1px solid var(--border);}
+  .meter-fill{height:100%;background:var(--slate-light);border-radius:6px;}
+  .meter-fill.hit{background:var(--accent);}
+  .meter-value{flex:none;width:120px;text-align:right;font:11.5px "Consolas",monospace;color:var(--text-dim);}
+  .meter-value.hit{color:var(--accent);font-weight:700;}
+
+  /* ---------- analogy strip (harness section) ---------- */
+  .analogy{
+    display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;
+    background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    padding:22px 20px;margin-bottom:24px;
+  }
+  .analogy-step{display:flex;flex-direction:column;align-items:center;gap:9px;color:var(--text-dim);font:12px "Consolas",monospace;text-align:center;max-width:130px;}
+  .analogy-icon{width:54px;height:54px;border-radius:50%;background:var(--panel-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;}
+  .analogy-step.power .analogy-icon{color:var(--accent);}
+  .analogy-step.harness .analogy-icon{color:var(--slate-light);}
+  .analogy-step.work .analogy-icon{color:var(--good);}
+  .analogy-arrow{color:var(--text-dim);font-size:20px;}
+
+  /* ---------- guardrail terminals (harness section) ---------- */
+  .term-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .terminal{background:#0e1116;border:1px solid var(--border);border-radius:10px;padding:14px 16px;font-family:"Consolas",monospace;font-size:12.5px;}
+  .terminal-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+  .terminal-head code{color:var(--text-dim);background:none;padding:0;}
+  .badge{font:700 10px "Consolas",monospace;letter-spacing:.06em;padding:3px 8px;border-radius:5px;flex:none;}
+  .badge.allow{background:rgba(76,175,125,.15);color:var(--good);border:1px solid var(--good);}
+  .badge.block{background:rgba(91,114,144,.15);color:var(--slate-light);border:1px solid var(--slate-light);}
+  .terminal pre{margin:0 0 10px;color:var(--text);white-space:pre-wrap;line-height:1.6;font-family:inherit;}
+  .terminal-output{color:var(--accent);border-top:1px solid var(--border);padding-top:8px;}
+
+  /* ---------- card grids ---------- */
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  .cards.five{grid-template-columns:repeat(3,1fr);}
+  .card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:18px 18px 16px;
+  }
+  .card .k{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:30px;height:30px;border-radius:8px;
+    background:var(--slate);
+    color:var(--heading);
+    font:700 14px "Consolas",monospace;
+    margin-bottom:10px;
+  }
+  .card:nth-child(1) .k{background:var(--accent);color:#241a0a;}
+  .card h3{margin:0 0 6px;font-size:15.5px;color:var(--heading);}
+  .card p{margin:0 0 10px;font-size:13.5px;color:var(--text-dim);}
+  .card .where{
+    display:inline-block;
+    font:11px "Consolas",monospace;
+    color:var(--accent);
+    background:rgba(217,147,43,.1);
+    border:1px solid var(--accent-dim);
+    padding:3px 8px;
+    border-radius:6px;
+  }
+
+  /* ---------- file map ---------- */
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+  thead th{
+    text-align:left;font:700 11px "Consolas",monospace;letter-spacing:.06em;
+    color:var(--text-dim);text-transform:uppercase;
+    background:var(--panel-2);
+    padding:12px 16px;border-bottom:1px solid var(--border);
+  }
+  tbody td{padding:14px 16px;font-size:13.5px;border-bottom:1px solid var(--border);vertical-align:top;}
+  tbody tr:last-child td{border-bottom:none;}
+  td.file{font:700 13px "Consolas",monospace;color:var(--accent);white-space:nowrap;}
+  td.concept{color:var(--heading);font-weight:600;}
+  td.detail{color:var(--text-dim);}
+
+  /* ---------- footer ---------- */
+  footer{
+    margin-top:20px;padding-top:20px;border-top:1px solid var(--border);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;
+    font:11px "Consolas",monospace;letter-spacing:.08em;color:var(--text-dim);
+  }
+
+  @media (max-width:760px){
+    .cards, .cards.five{grid-template-columns:1fr 1fr;}
+    .ladder{flex-direction:column;}
+    .arrow-between{transform:rotate(90deg);}
+    .flow-row{flex-wrap:wrap;}
+    .term-grid{grid-template-columns:1fr;}
+    .meter-label{width:56px;}
+    .meter-value{width:100px;}
+  }
+  @media (max-width:480px){
+    .cards, .cards.five{grid-template-columns:1fr;}
+    table, thead, tbody, th, td, tr{display:block;}
+    thead{display:none;}
+    tbody tr{border-bottom:1px solid var(--border);padding:10px 0;}
+    tbody td{border-bottom:none;padding:4px 16px;}
+    td.file{padding-top:12px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <span class="eyebrow">DAY 13 · L2 AGENT ENGINEERING</span>
+    <h1>Harness &amp; Loop Engineering</h1>
+    <p class="tagline">The loop repeats; the harness decides when it must stop.</p>
+  </header>
+
+  <div class="stat">
+    <div class="big">1&nbsp;500</div>
+    <p>PRs merged by a 3-person team that started with an empty repository — every line written by their own coding agent. The team's own account credits the result to how carefully they <strong>engineered the harness</strong> around the model, not to picking a smarter one.</p>
+  </div>
+
+  <section class="section">
+    <h2><span class="num">1</span>Where this fits in the course</h2>
+    <p class="section-sub">Four layers, each wrapped around the one before it. Read the rings from the outside in: a <b>harness</b> contains a <b>loop</b>; every turn of that loop assembles <b>context</b>; every assembled context produces one <b>prompt</b>.</p>
+
+    <div class="rings-wrap">
+      <svg class="rings" viewBox="0 0 420 420" role="img" aria-label="Four nested layers: harness, loop, context, prompt">
+        <circle cx="210" cy="210" r="200" fill="#28313c" stroke="var(--bg)" stroke-width="3"/>
+        <circle cx="210" cy="210" r="150" fill="var(--slate)" stroke="var(--bg)" stroke-width="3"/>
+        <circle cx="210" cy="210" r="100" fill="var(--slate-light)" stroke="var(--bg)" stroke-width="3"/>
+        <circle cx="210" cy="210" r="52" fill="var(--accent)" stroke="var(--bg)" stroke-width="3"/>
+        <text x="210" y="40" text-anchor="middle" font-family="Consolas,monospace" font-weight="700" font-size="16" letter-spacing="2" fill="#c7ceD4">HARNESS</text>
+        <text x="210" y="90" text-anchor="middle" font-family="Consolas,monospace" font-weight="700" font-size="15" letter-spacing="1.5" fill="#eef1f3">LOOP</text>
+        <text x="210" y="138" text-anchor="middle" font-family="Consolas,monospace" font-weight="700" font-size="14" letter-spacing="1.5" fill="#f2f4f5">CONTEXT</text>
+        <text x="210" y="206" text-anchor="middle" font-family="Consolas,monospace" font-weight="700" font-size="15" letter-spacing="1.5" fill="#241a0a">PROMPT</text>
+        <text x="210" y="224" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#241a0a">one call</text>
+      </svg>
+      <div class="rings-legend">
+        <div class="legend-row"><span class="dot" style="background:#28313c"></span><div><b>Harness</b><span>the environment: tools, guardrails, stop rules, observability</span></div></div>
+        <div class="legend-row"><span class="dot" style="background:var(--slate)"></span><div><b>Loop</b><span>the repeating cycle running inside it: act → verify → retry</span></div></div>
+        <div class="legend-row"><span class="dot" style="background:var(--slate-light)"></span><div><b>Context</b><span>what the model can see on any one turn of that loop</span></div></div>
+        <div class="legend-row"><span class="dot" style="background:var(--accent)"></span><div><b>Prompt</b><span>the exact wording sent for one single call</span></div></div>
+      </div>
+    </div>
+
+    <div class="ladder">
+      <div class="rung">
+        <span class="tag">One exchange</span>
+        <h3>Prompt Engineering</h3>
+        <p>Craft the wording of a single instruction to get a better single output.</p>
+      </div>
+      <div class="arrow-between">→</div>
+      <div class="rung">
+        <span class="tag">Day 12</span>
+        <h3>Context Engineering</h3>
+        <p>Curate what lands in the model's context window: select, compress, offload, isolate.</p>
+      </div>
+      <div class="arrow-between">→</div>
+      <div class="rung current">
+        <span class="tag">Day 13 · today</span>
+        <h3>Loop Engineering</h3>
+        <p>Design the repeating cycle itself: act, verify, retry, and how it knows when to stop.</p>
+      </div>
+      <div class="arrow-between">→</div>
+      <div class="rung current">
+        <span class="tag">Day 13 · today</span>
+        <h3>Harness Engineering</h3>
+        <p>Design everything wrapped around that cycle: tools, guardrails, observability.</p>
+      </div>
+    </div>
+
+    <div class="compare-table-wrap">
+      <table class="compare">
+        <thead>
+          <tr><th></th><th>Prompt</th><th>Context</th><th>Loop</th><th>Harness</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="rowlabel">Question it answers</td>
+            <td>What exact words do I say?</td>
+            <td>What does the model get to see?</td>
+            <td>What happens between steps, and when do we stop?</td>
+            <td>What's allowed, checked, and logged around all of it?</td>
+          </tr>
+          <tr>
+            <td class="rowlabel">Unit of work</td>
+            <td>One instruction → one output</td>
+            <td>One assembled window → one call</td>
+            <td>One cycle: act → verify → retry</td>
+            <td>The whole run: tools, guardrails, logs</td>
+          </tr>
+          <tr>
+            <td class="rowlabel">Fails silently as</td>
+            <td>A vague or ambiguous answer</td>
+            <td>A confident answer built on stale or missing info</td>
+            <td>An infinite retry, quietly burning cost forever</td>
+            <td>An action nobody approved, with no record of it</td>
+          </tr>
+          <tr>
+            <td class="rowlabel">In this course</td>
+            <td>Every day's <code style="color:var(--slate-light)">ollama.chat</code> call</td>
+            <td>Day 12</td>
+            <td>Day 13 — <code style="color:var(--slate-light)">act</code> / <code style="color:var(--slate-light)">verify</code></td>
+            <td>Day 13 — stop signals + guardrails</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2><span class="num">2</span>The loop, and the harness wrapped around it</h2>
+    <p class="section-sub"><code style="color:var(--slate-light)">act</code> and <code style="color:var(--slate-light)">verify</code> are the loop — they can only decide "try again." Everything that decides "stop trying, permanently" is the harness, shown here as the dashed boundary and the three exits.</p>
+    <div class="diagram">
+      <div class="flow-row">
+        <div class="node endpoint">START</div>
+        <span class="chevron">→</span>
+        <div class="loop-region">
+          <span class="loop-label">THE LOOP</span>
+          <div class="loop-boxes">
+            <div class="node loopbox">act</div>
+            <div class="node loopbox">verify</div>
+          </div>
+          <span class="retry-caption">↺ retry — loop's own decision, replayed by the harness</span>
+        </div>
+        <span class="chevron">→</span>
+        <div class="node endpoint">END</div>
+      </div>
+      <div class="exits">
+        <span class="exit-chip pass">verification passed</span>
+        <span class="exit-chip budget">cost budget reached</span>
+        <span class="exit-chip cap">iteration cap reached</span>
+      </div>
+      <p class="exits-caption">Any <b>one</b> of these three ends the run. None of them can override another — that split between "the loop's verdict" and "the harness's limit" is what makes the stop trustworthy instead of accidental.</p>
+    </div>
+
+    <h3 class="sub-title">See it run — 01_loop_engineering.ipynb, three configs</h3>
+    <div class="run-row">
+      <div class="run-head">
+        <span class="run-name">Run A · reachable threshold</span>
+        <span class="exit-chip pass">verification passed</span>
+      </div>
+      <div class="meter">
+        <span class="meter-label">attempts</span>
+        <div class="meter-track"><div class="meter-fill" style="width:40%"></div></div>
+        <span class="meter-value">2 / 5</span>
+      </div>
+      <div class="meter">
+        <span class="meter-label">cost</span>
+        <div class="meter-track"><div class="meter-fill" style="width:2%"></div></div>
+        <span class="meter-value">2.0 / 100.0</span>
+      </div>
+    </div>
+    <div class="run-row">
+      <div class="run-head">
+        <span class="run-name">Run B · unreachable threshold, room in budget</span>
+        <span class="exit-chip cap">iteration cap reached</span>
+      </div>
+      <div class="meter">
+        <span class="meter-label">attempts</span>
+        <div class="meter-track"><div class="meter-fill hit" style="width:100%"></div></div>
+        <span class="meter-value hit">3 / 3 · cap</span>
+      </div>
+      <div class="meter">
+        <span class="meter-label">cost</span>
+        <div class="meter-track"><div class="meter-fill" style="width:3%"></div></div>
+        <span class="meter-value">3.0 / 100.0</span>
+      </div>
+    </div>
+    <div class="run-row">
+      <div class="run-head">
+        <span class="run-name">Run C · unreachable threshold, tight budget</span>
+        <span class="exit-chip budget">cost budget reached</span>
+      </div>
+      <div class="meter">
+        <span class="meter-label">attempts</span>
+        <div class="meter-track"><div class="meter-fill" style="width:30%"></div></div>
+        <span class="meter-value">3 / 10</span>
+      </div>
+      <div class="meter">
+        <span class="meter-label">cost</span>
+        <div class="meter-track"><div class="meter-fill hit" style="width:100%"></div></div>
+        <span class="meter-value hit">30.0 / 25.0 · over</span>
+      </div>
+    </div>
+    <p class="exits-caption">Same graph, same nodes — only the numbers change. The <span style="color:var(--accent)">highlighted</span> meter is whichever one actually crossed its line first.</p>
+  </section>
+
+  <section class="section">
+    <h2><span class="num">3</span>Five components of a harness</h2>
+    <p class="section-sub">A harness is everything deliberately built around a repeated action. These five pieces show up in nearly every production agent system — and three of them already appear in this folder's code.</p>
+
+    <div class="analogy">
+      <div class="analogy-step power">
+        <div class="analogy-icon"><svg viewBox="0 0 24 24" width="26" height="26"><path fill="currentColor" d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></div>
+        <span>Raw power</span>
+      </div>
+      <span class="analogy-arrow">→</span>
+      <div class="analogy-step harness">
+        <div class="analogy-icon"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4"/></svg></div>
+        <span>The harness</span>
+      </div>
+      <span class="analogy-arrow">→</span>
+      <div class="analogy-step work">
+        <div class="analogy-icon"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div>
+        <span>Directed, useful work</span>
+      </div>
+    </div>
+
+    <div class="cards five">
+      <div class="card">
+        <span class="k">01</span>
+        <h3>System of Record</h3>
+        <p>The written rules something is expected to follow, kept where the work happens.</p>
+        <span class="where">conceptual — CLAUDE.md is this course's own</span>
+      </div>
+      <div class="card">
+        <span class="k">02</span>
+        <h3>Tools</h3>
+        <p>A small, deliberate, justified set of actions something is allowed to take.</p>
+        <span class="where">02_harness_engineering.ipynb — ALLOWED_ACTIONS</span>
+      </div>
+      <div class="card">
+        <span class="k">03</span>
+        <h3>Feedback Loops &amp; Verification</h3>
+        <p>A way to check the work without asking a human every time.</p>
+        <span class="where">example.py &amp; 01_loop_engineering.ipynb — verify</span>
+      </div>
+      <div class="card">
+        <span class="k">04</span>
+        <h3>Guardrails &amp; Permissions</h3>
+        <p>What's explicitly <em>not</em> allowed, and what requires a stop-and-check instead of a guess.</p>
+        <span class="where">02_harness_engineering.ipynb — check_permission</span>
+      </div>
+      <div class="card">
+        <span class="k">05</span>
+        <h3>Observability &amp; Memory</h3>
+        <p>A record of what actually happened, so a failed run can be reconstructed, not guessed at.</p>
+        <span class="where">02_harness_engineering.ipynb — trace</span>
+      </div>
+      <div class="card" style="border-style:dashed;">
+        <span class="k" style="background:transparent;border:1px solid var(--text-dim);color:var(--text-dim);">?</span>
+        <h3>Not yet: escalate-to-human</h3>
+        <p>Today's harness always resolves the loop itself. A fourth path — pause and ask — arrives with Day 8's interrupts.</p>
+        <span class="where" style="color:var(--text-dim);border-color:var(--border);background:transparent;">previewed, not built</span>
+      </div>
+    </div>
+
+    <h3 class="sub-title">See it run — 02_harness_engineering.ipynb</h3>
+    <div class="diagram" style="padding:24px 20px;margin-bottom:16px;">
+      <div class="flow-row">
+        <div class="node endpoint">request</div>
+        <span class="chevron">→</span>
+        <div class="node loopbox">check_permission</div>
+        <span class="chevron">→</span>
+        <div class="node endpoint">allowed?</div>
+        <span class="chevron">→</span>
+        <div class="node endpoint">execute_action<br>or reject_action</div>
+      </div>
+    </div>
+    <div class="term-grid">
+      <div class="terminal">
+        <div class="terminal-head"><span class="badge allow">ALLOWED</span><code>requested_action = "lookup_order"</code></div>
+        <pre>check_permission: 'lookup_order' is allowed
+execute_action: ran 'lookup_order'</pre>
+        <div class="terminal-output">Output: 'lookup_order' completed.</div>
+      </div>
+      <div class="terminal">
+        <div class="terminal-head"><span class="badge block">BLOCKED</span><code>requested_action = "issue_refund"</code></div>
+        <pre>check_permission: 'issue_refund' is blocked
+reject_action: refused 'issue_refund' (not on the allowed list)</pre>
+        <div class="terminal-output">Output: 'issue_refund' was blocked by the harness.</div>
+      </div>
+    </div>
+    <p class="exits-caption">Same two lines of allowlist logic, two different outcomes — and the <b>trace</b> on the left is exactly what lets you reconstruct why, after the run is over.</p>
+  </section>
+
+  <section class="section">
+    <h2><span class="num">4</span>Files in this folder</h2>
+    <p class="section-sub">One concept, one file each — the graded example plus two instructor-run demo notebooks.</p>
+    <table>
+      <thead>
+        <tr><th>File</th><th>Teaches</th><th>Key idea</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="file">example.py</td>
+          <td class="concept">Loop + harness, minimal</td>
+          <td class="detail">One stop signal: <code>enforce_limit</code>'s attempt cap. State is a plain <code>dict</code>, so every node must re-emit every field it wants to keep.</td>
+        </tr>
+        <tr>
+          <td class="file">01_loop_engineering.ipynb</td>
+          <td class="concept">Loop, extended</td>
+          <td class="detail"><code>route_after_verify</code> checks three independent stop signals instead of one. Uses a <code>State(TypedDict)</code>, so each node returns only what it changed.</td>
+        </tr>
+        <tr>
+          <td class="file">02_harness_engineering.ipynb</td>
+          <td class="concept">Harness, extended</td>
+          <td class="detail">A fixed allowlist, a permission guardrail, and an observability <code>trace</code> — the harness deciding <em>what's allowed</em>, not just <em>when to stop</em>.</td>
+        </tr>
+        <tr>
+          <td class="file">README.md</td>
+          <td class="concept">Participant handout</td>
+          <td class="detail">Objectives, concept walkthrough, hands-on lab, and the assignment.</td>
+        </tr>
+        <tr>
+          <td class="file">trainer-guide.md</td>
+          <td class="concept">Instructor notes</td>
+          <td class="detail">The concept-first talking points, the 120-minute flow, and common mistakes to watch for.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <footer>
+    <span>DAY 13 · HARNESS &amp; LOOP ENGINEERING</span>
+    <span>L2 AGENT ENGINEERING</span>
+  </footer>
+
+</div>
+</body>
+</html>
