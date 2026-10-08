@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day 17: Agent 1 (Requirements → Design) | Start Here</title>
+<style>
+:root {
+  --bg: #f6f7f9; --card: #ffffff; --ink: #1c2330; --muted: #5b6577; --line: #dfe3ea;
+  --brand: #1f5fd1; --brand-ink: #ffffff; --brand-soft: #e8f0fd;
+  --ok: #17803d; --ok-soft: #e5f5ea; --warn: #9a5b00; --warn-soft: #fff3dc;
+  --code-bg: #101826; --code-ink: #e6edf7; --code-head: #1a2538; --code-line: #2a3750;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f141c; --card: #171e29; --ink: #e6ebf3; --muted: #9aa5b8; --line: #2a3445;
+    --brand: #6ea2ff; --brand-ink: #0b1220; --brand-soft: #1b2a45;
+    --ok: #5ed38a; --ok-soft: #14301f; --warn: #f3b95f; --warn-soft: #382a0f;
+    --code-bg: #0a0f18; --code-head: #131b2a; --code-line: #26324a;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f141c; --card: #171e29; --ink: #e6ebf3; --muted: #9aa5b8; --line: #2a3445;
+  --brand: #6ea2ff; --brand-ink: #0b1220; --brand-soft: #1b2a45;
+  --ok: #5ed38a; --ok-soft: #14301f; --warn: #f3b95f; --warn-soft: #382a0f;
+  --code-bg: #0a0f18; --code-head: #131b2a; --code-line: #26324a;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 16px; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.hero { background: linear-gradient(135deg, #17408f, #1f5fd1 60%, #3a7be8); color: #fff; padding: 36px 16px 30px; }
+.hero-inner { max-width: 1120px; margin: 0 auto; }
+.eyebrow { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; opacity: .85; font-weight: 600; }
+.hero h1 { margin: 6px 0 12px; font-size: clamp(26px, 4.5vw, 40px); line-height: 1.15; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.28); padding: 3px 12px; border-radius: 99px; font-size: 14px; }
+.toolbar { max-width: 1120px; margin: 0 auto; padding: 0 16px; display: flex; justify-content: flex-end; gap: 8px; }
+.layout { max-width: 1120px; margin: 0 auto; padding: 24px 16px 64px; display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 32px; }
+nav.toc { position: sticky; top: 16px; align-self: start; max-height: calc(100vh - 32px); overflow: auto; font-size: 14px; }
+nav.toc .label { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 700; margin-bottom: 8px; }
+nav.toc a { display: block; padding: 6px 10px; border-left: 3px solid var(--line); color: var(--muted); text-decoration: none; }
+nav.toc a:hover, nav.toc a.active { color: var(--brand); border-left-color: var(--brand); background: var(--brand-soft); }
+main { min-width: 0; }
+main > p:first-child { font-size: 18px; }
+h2 { margin: 40px 0 12px; padding-top: 8px; font-size: 24px; line-height: 1.25; border-top: 1px solid var(--line); }
+main > h2:first-of-type { border-top: 0; margin-top: 8px; }
+h3 { margin: 24px 0 8px; font-size: 18px; }
+p, li { max-width: 78ch; }
+a { color: var(--brand); }
+hr { border: 0; border-top: 1px solid var(--line); margin: 28px 0; }
+code { font: 0.9em ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; background: var(--brand-soft); padding: 1px 6px; border-radius: 5px; }
+.tablewrap { overflow-x: auto; margin: 14px 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+th, td { padding: 9px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+th { background: var(--brand-soft); font-weight: 650; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.fill { min-width: 90px; background: color-mix(in srgb, var(--warn-soft) 55%, transparent); cursor: text; }
+td.fill:focus { outline: 2px solid var(--brand); outline-offset: -2px; background: var(--card); }
+li.task { list-style: none; margin-left: -1.3em; }
+li.task input { margin-right: 8px; width: 17px; height: 17px; vertical-align: -3px; accent-color: var(--ok); }
+li.task label { cursor: pointer; }
+li.task:has(input:checked) { color: var(--muted); text-decoration: line-through; }
+.code { margin: 14px 0; border-radius: var(--radius); overflow: hidden; background: var(--code-bg); border: 1px solid var(--code-line); }
+.code-head { display: flex; align-items: center; gap: 10px; padding: 7px 8px 7px 14px; background: var(--code-head); border-bottom: 1px solid var(--code-line); color: #c3cee0; font-size: 13px; }
+.code-head .tag { font-weight: 700; text-transform: uppercase; letter-spacing: .08em; font-size: 11px; background: #2d4b86; color: #fff; padding: 2px 8px; border-radius: 5px; }
+.code-cmd .tag { background: #1d6b45; }
+.code-output .tag, .code-plain .tag { background: #4a5468; }
+.code-head .hint { flex: 1; min-width: 0; opacity: .85; }
+.copy { appearance: none; border: 1px solid #4d6aa3; background: #25427a; color: #fff; font: 600 13px system-ui, sans-serif; padding: 5px 14px; border-radius: 7px; cursor: pointer; }
+.copy:hover { background: #2f55a1; }
+.copy:focus-visible { outline: 2px solid #9cc0ff; outline-offset: 2px; }
+.copy.done { background: #1f7a45; border-color: #3fae6e; }
+.code pre { margin: 0; padding: 14px 16px; overflow-x: auto; color: var(--code-ink); font: 13.5px/1.55 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; white-space: pre; }
+.code code { background: none; padding: 0; font: inherit; color: inherit; }
+blockquote { margin: 14px 0; padding: 10px 16px; background: var(--warn-soft); border-left: 4px solid var(--warn); border-radius: 0 var(--radius) var(--radius) 0; }
+blockquote p { margin: 4px 0; }
+.btn { appearance: none; border: 1px solid var(--line); background: var(--card); color: var(--ink); padding: 6px 12px; border-radius: 8px; font: 600 13px system-ui, sans-serif; cursor: pointer; margin-top: -18px; position: relative; }
+.btn:hover { border-color: var(--brand); color: var(--brand); }
+strong { font-weight: 650; }
+@media (max-width: 860px) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  nav.toc { min-width: 0; max-width: 100%; }
+  .code-head .hint { display: none; }
+  .code-head .copy { margin-left: auto; }
+  nav.toc { position: static; max-height: none; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; padding-bottom: 6px; }
+  nav.toc .label { display: none; }
+  nav.toc a { white-space: nowrap; border: 1px solid var(--line); border-radius: 99px; background: var(--card); padding: 6px 12px; }
+}
+@media print {
+  body { background: #fff; color: #000; font-size: 11pt; }
+  .hero { background: #fff; color: #000; padding: 0 0 8px; border-bottom: 2px solid #000; }
+  .chip { border-color: #999; color: #000; background: none; }
+  nav.toc, .toolbar, .copy { display: none; }
+  .layout { display: block; padding: 8px 0; }
+  .code { break-inside: avoid; background: #f3f3f3; border-color: #bbb; }
+  .code pre { color: #000; white-space: pre-wrap; }
+  .code-head { background: #e4e4e4; color: #000; }
+  .tablewrap { overflow: visible; }
+  h2 { break-after: avoid; }
+}
+</style>
+</head>
+<body>
+<header class="hero"><div class="hero-inner">
+  <div class="eyebrow">Day 17 &middot; Start here</div>
+  <h1>Agent 1 (Requirements → Design)</h1>
+  <div class="chips"><span class="chip">About 100 min</span><span class="chip">You write no code</span><span class="chip">Specify &rarr; verify &rarr; accept</span></div>
+</div></header>
+<div class="toolbar"><button class="btn" id="theme" type="button">Toggle light/dark</button><button class="btn" id="print" type="button">Print</button></div>
+<div class="layout">
+<nav class="toc" aria-label="On this page"><div class="label">On this page</div>
+<a href="#before-you-start-about-10-min-once">Before you start (about 10 min, once)</a>
+<a href="#setup-2-windows-both-in-the-course-folder">Setup (2 windows, both in the course folder)</a>
+<a href="#1-the-concept-10-min">1. The concept (10 min)</a>
+<a href="#2-plan-first-10-min">2. Plan first (10 min)</a>
+<a href="#3-build-and-run-15-min">3. Build and run (15 min)</a>
+<a href="#4-tests-15-min">4. Tests (15 min)</a>
+<a href="#5-break-it-on-purpose-10-min">5. Break it on purpose (10 min)</a>
+<a href="#6-claude-code-feature-rule-skill-30-min">6. Claude Code feature: rule + skill (30 min)</a>
+<a href="#7-decide-and-wrap-up-10-min">7. Decide and wrap up (10 min)</a>
+<a href="#appendix-extra-tests-scope-checks-and-hand-in-sheet-homework-or-spare-time">Appendix: extra tests, scope checks and hand-in sheet (homework or spare time)</a>
+</nav>
+<main>
+<p><strong>This is the only file you need today.</strong> By the end, <code>my_agent1.py</code> is built by Claude Code and running.</p>
+<p><strong>Your role:</strong> you write no code. You give Claude Code a spec, check its plan, run what it builds, and accept or reject it.</p>
+<h2 id="before-you-start-about-10-min-once">Before you start (about 10 min, once)</h2>
+<p>Do this ideally before class. It covers Days 17, 18 and 19.</p>
+<p>Run these in Windows <strong>Command Prompt</strong>, from the course folder (the one containing <code>pyproject.toml</code>).</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Command</th>
+<th>You should see</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. Claude Code installed</td>
+<td><code>claude --version</code></td>
+<td>A version number. If not, ask your trainer for the install steps</td>
+</tr>
+<tr>
+<td>2. Sign in to Ollama</td>
+<td><code>ollama signin</code></td>
+<td>Signed in</td>
+</tr>
+<tr>
+<td>3. Models work</td>
+<td><code>ollama run gpt-oss:120b-cloud</code> and then <code>ollama run nemotron-3-ultra:cloud</code> (type <code>hi</code>, then <code>/bye</code> each time)</td>
+<td>A reply from both. The agents you build call <code>gpt-oss:120b-cloud</code>; Claude Code itself runs on <code>nemotron-3-ultra:cloud</code></td>
+</tr>
+<tr>
+<td>4. Install packages</td>
+<td><code>uv sync</code></td>
+<td>Finishes without errors</td>
+</tr>
+<tr>
+<td>5. You're in the course folder</td>
+<td><code>dir pyproject.toml</code></td>
+<td>The file is found</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Claude Code in 60 seconds</strong> (all you need for these three days):</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Do this</th>
+<th>How</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Start it (always this way, never plain <code>claude</code>)</td>
+<td><code>ollama launch claude --model nemotron-3-ultra:cloud</code></td>
+</tr>
+<tr>
+<td>Plan mode (it shows a plan and edits nothing)</td>
+<td>Press <strong>Shift+Tab</strong> until the mode label says plan mode. Press again to leave it</td>
+</tr>
+<tr>
+<td>Approve a plan</td>
+<td>Choose the "yes / proceed" option when it offers one</td>
+</tr>
+<tr>
+<td>Permission prompts</td>
+<td>Claude Code asks before running commands or writing files. Read the path, then allow</td>
+</tr>
+<tr>
+<td>Start a fresh chat</td>
+<td><code>/clear</code></td>
+</tr>
+<tr>
+<td>Quit</td>
+<td><code>/exit</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="setup-2-windows-both-in-the-course-folder">Setup (2 windows, both in the course folder)</h2>
+<ul>
+<li>Window 1: <code>ollama launch claude --model nemotron-3-ultra:cloud</code>. This is where you paste prompts.</li>
+<li>Window 2: plain Command Prompt. This is where you run the agent. (Claude Code can't type <code>yes</code> for you.)</li>
+</ul>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Min</th>
+<th>Part</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0–10</td>
+<td>1. The concept</td>
+</tr>
+<tr>
+<td>10–20</td>
+<td>2. Plan (Prompt 1)</td>
+</tr>
+<tr>
+<td>20–35</td>
+<td>3. Build and run (Prompt 2)</td>
+</tr>
+<tr>
+<td>35–50</td>
+<td>4. Tests</td>
+</tr>
+<tr>
+<td>50–60</td>
+<td>5. Break it</td>
+</tr>
+<tr>
+<td>60–90</td>
+<td>6. Claude Code feature: rule + skill</td>
+</tr>
+<tr>
+<td>90–100</td>
+<td>7. Decide, wrap-up</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="1-the-concept-10-min">1. The concept (10 min)</h2>
+<div class="code code-plain"><div class="code-head"><span class="tag">Diagram</span><span class="hint"></span></div><pre><code>Requirement --&gt; [model writes stories] --&gt; [Python checks them] --&gt; [human says yes] --&gt; Design
+</code></pre></div>
+<p>Agent 1 takes a short requirement and produces:</p>
+<ol>
+<li><strong>User stories</strong> ("As a / I want / so that")</li>
+<li><strong>Given/When/Then</strong> acceptance criteria</li>
+<li><strong>Clarifying questions</strong> for vague words ("quickly", "secure", "easy")</li>
+<li><strong>Functional and non-functional</strong> requirements</li>
+<li>A short <strong>design</strong>, only after a human says yes</li>
+</ol>
+<p>Ideas to teach:</p>
+<ul>
+<li><strong>Traceability:</strong> each sentence gets an ID (R1, R2, R3). Every story names the ID it came from.</li>
+<li><strong>Decomposition:</strong> "approve <strong>or</strong> reject" is two actions, so it must produce <strong>two</strong> stories.</li>
+<li><strong>Model suggests, Python validates, human approves.</strong> The model never grades itself.</li>
+<li><strong>Bounded retry:</strong> if the check fails, retry at most 2 times, then stop.</li>
+</ul>
+<p>Good output looks like this (your wording will differ, the shape must match):</p>
+<div class="code code-output"><div class="code-head"><span class="tag">Example output</span><span class="hint">Yours will differ in wording; the shape must match</span></div><pre><code>Clarifying questions: how fast is &quot;quickly&quot;? what does &quot;secure&quot; require? ...
+US-1 (R1): As an employee, I want to submit a leave request online, so that ...
+   * Given logged in, when they submit, then the request is stored.
+US-2 (R2): As a manager, I want to approve ...      US-3 (R2): ... reject ...
+Functional: The system shall let managers approve / reject a request.
+Non-functional: The system shall encrypt data in transit (security).
+Approve these stories and criteria? (yes/no): yes
+Status: Design ready
+</code></pre></div>
+<hr />
+<h2 id="2-plan-first-10-min">2. Plan first (10 min)</h2>
+<p>In Window 1 press <strong>Shift+Tab until plan mode is on</strong>, then paste:</p>
+<div class="code code-text"><div class="code-head"><span class="tag">Prompt</span><span class="hint">Paste into Claude Code (Window 1)</span><button class="copy" type="button" aria-label="Copy to clipboard">Copy</button></div><pre><code>Create ONE new file: Day-17-SDLC-Agent-1-Requirements-Design\my_agent1.py,
+a LangGraph requirements analyst agent.
+
+Goal: convert a requirement into user stories, Given/When/Then acceptance criteria,
+clarifying questions, functional requirements, non-functional requirements and a short
+design, with human approval before the design. If a requirement sentence has more than
+one action joined by &quot;and&quot; or &quot;or&quot;, write a separate story for each action.
+Context: the human approval uses interrupt and Command(resume=...). Use explicit
+add_conditional_edges for every route.
+LangGraph facts (use exactly this API):
+- Imports: from typing import TypedDict; from langgraph.graph import StateGraph, START, END;
+  from langgraph.checkpoint.memory import InMemorySaver; from langgraph.types import Command, interrupt.
+- The state is a TypedDict class (total=False), passed as StateGraph(StateClass). A node is a
+  function that takes state and returns a dict of updates: builder.add_node(&quot;name&quot;, fn).
+- Edges: builder.add_edge(START, &quot;a&quot;). Routing: builder.add_conditional_edges(&quot;a&quot;, route_fn,
+  {&quot;label&quot;: &quot;next_node&quot;, &quot;other&quot;: END}), where route_fn(state) returns one of the labels. Use no
+  other arguments.
+- Compile with graph = builder.compile(checkpointer=InMemorySaver()). Run with
+  config = {&quot;configurable&quot;: {&quot;thread_id&quot;: &quot;t1&quot;}}: graph.invoke(state, config=config) runs until a node
+  calls interrupt(&quot;question&quot;); ask yes/no with input(), then
+  graph.invoke(Command(resume=answer.lower() == &quot;yes&quot;), config=config).
+- A node that calls interrupt() runs again from its start on resume, so put interrupt() in its own
+  small node and print nothing before it.
+- The value passed to Command(resume=...) is what interrupt(...) returns inside that node. Store it in
+  state: approved = interrupt(&quot;question&quot;); return {&quot;approved&quot;: approved}. Route on state[&quot;approved&quot;].
+- Model replies may wrap JSON in markdown fences: strip them before json.loads.
+Constraints: one file, direct ollama.chat with model gpt-oss:120b-cloud, no LangChain,
+no helper files, do not touch any other folder. Maximum 2 analysis attempts.
+Verify: plain Python (not the model) must check: valid JSON, each story starts with &quot;As a&quot;,
+each criterion has given/when/then, every requirement ID is traced to a story, a sentence
+with &quot;and&quot; or &quot;or&quot; has at least two stories, at least one clarifying question exists, and
+both functional and non-functional requirement lists are non-empty.
+Sample requirement: &quot;Employees can request leave online. Managers approve or reject the
+request quickly. The system must be secure and easy to use.&quot;
+Graph shape: START -&gt; number -&gt; analyze -&gt; validate. After validate: valid goes to approval; invalid
+with fewer than 2 tries goes back to analyze; otherwise goes to stopped. After approval: yes goes to
+design then END; no goes to stopped then END. The approval node only calls interrupt().
+Every requirement sentence is numbered R1, R2, R3 (one per sentence) and every story names its R-number.
+When the file is run (no arguments, no typing except the yes/no answer) it runs the sample
+requirement through the graph and prints: &quot;Clarifying questions for the stakeholder:&quot; with each
+question; &quot;User stories:&quot; with each story as &quot;US-n (Rk): As a ...&quot; followed by its Given/When/Then line;
+&quot;Functional requirements:&quot; and &quot;Non-functional requirements:&quot; lists. Then it asks
+&quot;Approve these stories and criteria? (yes/no): &quot; with input(). On yes it prints &quot;Status: Design ready&quot;
+and the design. On no it prints &quot;Status: Stopped: human rejected the stories&quot; and no design. If
+validation fails twice it prints &quot;Status: Stopped: validation failed after 2 attempts&quot;. The file
+must actually call the graph under if __name__ == &quot;__main__&quot;.
+Make a short plan first (under 15 lines). Do not explore other folders or use research helpers.
+Do not edit files yet.
+</code></pre></div>
+<p><strong>Approve the plan only if it has all of these:</strong></p>
+<ul>
+<li class="task"><label><input type="checkbox"> One file named <code>my_agent1.py</code></label></li>
+<li class="task"><label><input type="checkbox"> A step that numbers the sentences (R1, R2, R3)</label></li>
+<li class="task"><label><input type="checkbox"> A model step producing stories, criteria, questions, functional and non-functional lists</label></li>
+<li class="task"><label><input type="checkbox"> A <strong>separate Python</strong> step that validates (including decomposition and both lists)</label></li>
+<li class="task"><label><input type="checkbox"> A retry route limited to 2, and a stop route</label></li>
+<li class="task"><label><input type="checkbox"> A human approval pause before the design</label></li>
+<li class="task"><label><input type="checkbox"> No LangChain, no extra files</label></li>
+</ul>
+<p>If anything is missing, tell Claude Code exactly what and ask for a new plan.</p>
+<hr />
+<h2 id="3-build-and-run-15-min">3. Build and run (15 min)</h2>
+<p>Approve the plan, then paste:</p>
+<div class="code code-text"><div class="code-head"><span class="tag">Prompt</span><span class="hint">Paste into Claude Code (Window 1)</span><button class="copy" type="button" aria-label="Copy to clipboard">Copy</button></div><pre><code>Implement the plan. Do not run the program yourself: it stops to ask me to type yes or no,
+and you cannot type for me. When the file is written, check that it compiles with
+uv run python -m py_compile Day-17-SDLC-Agent-1-Requirements-Design\my_agent1.py and fix any error.
+Then tell me the exact command to run.
+</code></pre></div>
+<p><strong>Run it in Window 2</strong> and type <code>yes</code> at the question:</p>
+<div class="code code-cmd"><div class="code-head"><span class="tag">Command</span><span class="hint">Run in Command Prompt (Window 2)</span><button class="copy" type="button" aria-label="Copy to clipboard">Copy</button></div><pre><code>uv run python Day-17-SDLC-Agent-1-Requirements-Design\my_agent1.py
+</code></pre></div>
+<p><strong>The agent is now up and running.</strong></p>
+<p><em>If the build fails or stalls for more than 5 minutes:</em> tell your trainer. Don't keep retrying the same prompt. Send Claude Code one precise fix request instead (see the examples in Part 4).</p>
+<hr />
+<h2 id="4-tests-15-min">4. Tests (15 min)</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Test</th>
+<th>Pass when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A1</td>
+<td>Run, answer<code>yes</code></td>
+<td>Questions, stories, criteria, design printed. Status "Design ready"</td>
+</tr>
+<tr>
+<td>A2</td>
+<td>Count R-numbers</td>
+<td>R1, R2, R3 each appear at least once</td>
+</tr>
+<tr>
+<td>A3</td>
+<td>Read the questions</td>
+<td>One each for "quickly", "secure", "easy to use"</td>
+</tr>
+<tr>
+<td>A7</td>
+<td>Read the two lists before the approval</td>
+<td>Functional (submit/approve/reject) and non-functional (security, usability)</td>
+</tr>
+<tr>
+<td>A8</td>
+<td>Stories tagged R2</td>
+<td><strong>Two</strong>: one approve, one reject</td>
+</tr>
+<tr>
+<td>A5</td>
+<td>Run again, answer<code>no</code></td>
+<td>Status says stopped;<strong>no design printed</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Fix loop (read this once):</strong> the first build often has a bug. Send Claude Code <strong>one short message</strong> naming the failed test and what you saw. After every fix, <strong>re-run all the tests</strong>, not just the one that failed, because a fix can quietly break something that passed. Long, detailed fix messages can make Claude Code remove features. If it says "it works" or "it compiles" but shows no output, reply: <code>You said it works but did not run it. Run it and show me the output.</code> If two fixes don't work, ask your trainer.</p>
+<p>If a test fails, <strong>reject</strong>. Tell Claude Code exactly what failed, for example:
+<code>Test A8 failed: R2 has one story but the sentence says approve OR reject. Split it into two stories and make validation require that.</code>
+Then re-run only the failed test.</p>
+<hr />
+<h2 id="5-break-it-on-purpose-10-min">5. Break it on purpose (10 min)</h2>
+<p>Paste in Window 1:</p>
+<div class="code code-text"><div class="code-head"><span class="tag">Prompt</span><span class="hint">Paste into Claude Code (Window 1)</span><button class="copy" type="button" aria-label="Copy to clipboard">Copy</button></div><pre><code>Temporarily change the validation so it always reports a problem. Run the agent and show me
+the output, then restore the original. I need to see that it stops after exactly 2 attempts.
+</code></pre></div>
+<p><strong>Accept when:</strong> output shows two attempts, then a stop message, and the file is restored.</p>
+<hr />
+<h2 id="6-claude-code-feature-rule-skill-30-min">6. Claude Code feature: rule + skill (30 min)</h2>
+<p><strong>Concept.</strong> A <strong>rule</strong> is a small instruction file in <code>.claude\rules\</code>. It's guidance, so Claude Code follows it <em>most</em> of the time, not always. A <strong>skill</strong> is a reusable <code>/command</code>: one command runs the same checklist every time.</p>
+<blockquote>
+<p>Claude Code will ask permission before writing in <code>.claude</code>. Check the path and allow it.</p>
+</blockquote>
+<h3 id="6a-rules-15-min">6a. Rules (15 min)</h3>
+<p>Plan mode, paste, then approve:</p>
+<div class="code code-text"><div class="code-head"><span class="tag">Prompt</span><span class="hint">Paste into Claude Code (Window 1)</span><button class="copy" type="button" aria-label="Copy to clipboard">Copy</button></div><pre><code>Create two rule files, and nothing else.
+
+1) .claude\rules\agent-style.md  (no paths header, always loaded). Content:
+   - Every Python file you create must start with a first line that reads exactly: # AGENT FILE
+   - Use ollama.chat(model=&quot;gpt-oss:120b-cloud&quot;, ...) directly. Never import LangChain.
+   - One agent per file. Do not create helper modules.
+
+2) .claude\rules\agent-files.md  which must begin with exactly this YAML header (the first line is three dashes):
+---
+paths:
+  - &quot;Day-*/my_*.py&quot;
+---
+   Then the content:
+   - Any change to one of these files must end by adding a last line comment: # REVIEWED BY RULE
+
+Show me both files exactly as written.
+</code></pre></div>
+<ul>
+<li><strong>Check:</strong> two files; the second has a <code>paths:</code> header with <code>Day-*/my_*.py</code>.</li>
+<li><strong>R2 (rules are loaded):</strong> restart <code>claude</code> and ask: <code>Without opening files, quote the rules from .claude\rules.</code> It must quote the always-on rule file (<code>agent-style.md</code>). The path-scoped file is <em>not</em> expected here: it loads only when a matching file is used (R4).</li>
+<li><strong>R4 (scoped rule fires):</strong> ask Claude Code to create <code>Day-17-SDLC-Agent-1-Requirements-Design\my_demo.py</code> with one print line, then <code>Edit my_demo.py to also print done.</code> The last line of the file should become <code># REVIEWED BY RULE</code>.</li>
+<li><strong>Poll (3 min):</strong> restart <code>claude</code>. Ask three times (with <code>/clear</code> between): <code>Create Day-17-SDLC-Agent-1-Requirements-Design\scratch1.py that prints hello</code> (then scratch2, scratch3). Count how many files start with <code># AGENT FILE</code>. There's no pass or fail: <strong>the number is the lesson</strong>. Rules are rarely 3 of 3.</li>
+<li>Afterwards ask Claude Code to delete <code>scratch*.py</code>.</li>
+</ul>
+<h3 id="6b-skill-15-min">6b. Skill (15 min)</h3>
+<p>Plan mode, paste, then approve:</p>
+<div class="code code-text"><div class="code-head"><span class="tag">Prompt</span><span class="hint">Paste into Claude Code (Window 1)</span><button class="copy" type="button" aria-label="Copy to clipboard">Copy</button></div><pre><code>Create the file .claude\skills\accept-check\SKILL.md. Its content is the text between the lines
+START and END below, character for character (not including those two lines). Do not add,
+remove, reword or &quot;improve&quot; anything, do not add checks from other files or rules, and do not
+create any other file. The word $ARGUMENTS must stay exactly as written, with the dollar sign.
+START
+---
+name: accept-check
+description: Run the scope checks on an agent file and print a PASS or FAIL table. Use when the user asks to check or accept an agent file.
+argument-hint: &lt;path to agent file&gt;
+---
+
+Run the scope checks on the file $ARGUMENTS. Do not edit any file.
+
+1. Run `findstr /i /c:&quot;langchain&quot; $ARGUMENTS`. PASS if nothing is printed.
+2. Run `findstr /c:&quot;gpt-oss:120b-cloud&quot; $ARGUMENTS`. PASS if at least one line is printed.
+3. Run `findstr /c:&quot;interrupt&quot; $ARGUMENTS`. PASS if at least one line is printed.
+
+Then print a small table with one row per check and the word PASS or FAIL, and finish with
+the line `DECISION: ACCEPT` only if all three passed, otherwise `DECISION: REJECT`.
+END
+Then show me the file.
+</code></pre></div>
+<p>Now use it on your agent:</p>
+<div class="code code-text"><div class="code-head"><span class="tag">Prompt</span><span class="hint">Paste into Claude Code (Window 1)</span><button class="copy" type="button" aria-label="Copy to clipboard">Copy</button></div><pre><code>/accept-check Day-17-SDLC-Agent-1-Requirements-Design\my_agent1.py
+</code></pre></div>
+<p><strong>Pass when:</strong> a table of three PASS and <code>DECISION: ACCEPT</code>.</p>
+<hr />
+<h2 id="7-decide-and-wrap-up-10-min">7. Decide and wrap up (10 min)</h2>
+<p>Write <strong>ACCEPT</strong> or <strong>REJECT</strong> with one line of evidence. Accept only if A1–A8, the break-it test and <code>/accept-check</code> all passed.</p>
+<p><strong>Homework:</strong> run Agent 1 on your own two-sentence requirement. Hand in the requirement, your results, and one case where the output was weaker than you expected.</p>
+<p>You're ready for Day 18 if you can name the 5 outputs, you checked a plan before approving, you saw the agent stop cleanly, and you know your rule-compliance number.</p>
+<hr />
+<h2 id="appendix-extra-tests-scope-checks-and-hand-in-sheet-homework-or-spare-time">Appendix: extra tests, scope checks and hand-in sheet (homework or spare time)</h2>
+<p><strong>Extra tests</strong></p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Test</th>
+<th>Pass when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A4</td>
+<td>Read each story</td>
+<td>Every story has a Given / When / Then line you could turn into a test</td>
+</tr>
+<tr>
+<td>A6</td>
+<td>Ask Claude Code:<code>Run it again with this requirement: "The system sends an email when a leave request is approved." Give the approval answer by piping it in with: echo yes\| uv run python ...</code></td>
+<td>Still works; stories trace to R1</td>
+</tr>
+<tr>
+<td>Break-it 2</td>
+<td>Paste:<code>Temporarily make the model's reply invalid JSON (for example the text "hello"), run once, show the output, then restore the original.</code></td>
+<td>The agent reports a problem and retries or stops. It does not crash</td>
+</tr>
+<tr>
+<td>S3</td>
+<td>Ask Claude Code to create<code>bad.py</code> containing <code>import langchain</code>, then <code>/accept-check bad.py</code> (with its path)</td>
+<td>At least one FAIL and<code>DECISION: REJECT</code></td>
+</tr>
+<tr>
+<td>S4</td>
+<td>Compare the file before and after the skill ran</td>
+<td>Unchanged. The skill edits nothing</td>
+</tr>
+<tr>
+<td>R5</td>
+<td>Ask Claude Code to delete<code>scratch*.py</code></td>
+<td>Files gone</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Scope checks</strong> (or just run <code>/accept-check</code>). Run in Window 2:</p>
+<div class="code code-cmd"><div class="code-head"><span class="tag">Command</span><span class="hint">Run in Command Prompt (Window 2)</span><button class="copy" type="button" aria-label="Copy to clipboard">Copy</button></div><pre><code>dir Day-17-SDLC-Agent-1-Requirements-Design
+findstr /i /c:&quot;langchain&quot; Day-17-SDLC-Agent-1-Requirements-Design\my_agent1.py
+findstr /c:&quot;gpt-oss:120b-cloud&quot; Day-17-SDLC-Agent-1-Requirements-Design\my_agent1.py
+findstr /c:&quot;interrupt&quot; Day-17-SDLC-Agent-1-Requirements-Design\my_agent1.py
+</code></pre></div>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Pass when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dir</code></td>
+<td>Only<code>my_agent1.py</code> was added</td>
+</tr>
+<tr>
+<td><code>langchain</code></td>
+<td><strong>No output</strong></td>
+</tr>
+<tr>
+<td><code>gpt-oss:120b-cloud</code></td>
+<td>One or more lines</td>
+</tr>
+<tr>
+<td><code>interrupt</code></td>
+<td>One or more lines</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>A hit can be a false alarm.</strong> <code>findstr</code> reads text only. If <code>langchain</code> appears only inside a comment or a line saying <em>not</em> to use it, nothing is wrong, but the check still fails. Ask Claude Code to remove the word, or note it on your sheet and accept.</p>
+<p><strong>Hand-in sheet</strong></p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Pass / Fail</th>
+<th>Evidence (one line of output)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A1</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>A2</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>A3</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>A4</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>A5</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>A6</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>A7</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>A8</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Break-it 1 (2 attempts then stop)</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Break-it 2 (invalid JSON)</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Scope checks</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Rules: R3 number (out of 3 starting with<code># AGENT FILE</code>)</td>
+<td>n/a</td>
+<td></td>
+</tr>
+<tr>
+<td>Skill: S2<code>/accept-check</code> gives ACCEPT; S3; S4</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Decision</strong></td>
+<td>ACCEPT / REJECT</td>
+<td>One sentence why</td>
+</tr>
+</tbody>
+</table></div>
+</main>
+</div>
+<script>
+(function () {
+  var KEY = "Day-17-SDLC-Agent-1-Requirements-Design";
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { return {}; } }
+  function save(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} }
+  var state = load();
+
+  /* Copy buttons */
+  function legacyCopy(text) {
+    return new Promise(function (resolve, reject) {
+      var ta = document.createElement("textarea");
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (e) {}
+      document.body.removeChild(ta);
+      ok ? resolve() : reject();
+    });
+  }
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext !== false) {
+      return navigator.clipboard.writeText(text).catch(function () { return legacyCopy(text); });
+    }
+    return legacyCopy(text);
+  }
+  document.querySelectorAll(".code .copy").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var code = btn.closest(".code").querySelector("code").innerText.replace(/\n$/, "");
+      copyText(code).then(function () {
+        btn.textContent = "Copied \u2713"; btn.classList.add("done");
+      }, function () {
+        btn.textContent = "Press Ctrl+C"; var r = document.createRange();
+        r.selectNodeContents(btn.closest(".code").querySelector("code"));
+        var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      });
+      setTimeout(function () { btn.textContent = "Copy"; btn.classList.remove("done"); }, 1800);
+    });
+  });
+
+  /* Tick-boxes remember their state */
+  document.querySelectorAll("li.task input").forEach(function (box, i) {
+    var k = "c" + i; box.checked = !!state[k];
+    box.addEventListener("change", function () { state[k] = box.checked; save(state); });
+  });
+
+  /* Empty table cells (hand-in sheet) become fillable */
+  document.querySelectorAll("td").forEach(function (td, i) {
+    if (td.textContent.trim() !== "") return;
+    var k = "t" + i; td.classList.add("fill"); td.contentEditable = "true";
+    td.setAttribute("aria-label", "Fill in");
+    if (state[k]) td.textContent = state[k];
+    td.addEventListener("input", function () { state[k] = td.textContent; save(state); });
+  });
+
+  /* Highlight the section being read */
+  var links = Array.prototype.slice.call(document.querySelectorAll("nav.toc a"));
+  var map = {}; links.forEach(function (a) { map[a.getAttribute("href").slice(1)] = a; });
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting && map[e.target.id]) {
+          links.forEach(function (a) { a.classList.remove("active"); });
+          map[e.target.id].classList.add("active");
+        }
+      });
+    }, { rootMargin: "0px 0px -70% 0px" });
+    document.querySelectorAll("main h2").forEach(function (h) { io.observe(h); });
+  }
+
+  /* Theme + print */
+  document.getElementById("print").addEventListener("click", function () { window.print(); });
+  document.getElementById("theme").addEventListener("click", function () {
+    var root = document.documentElement;
+    var dark = root.getAttribute("data-theme") === "dark" ||
+      (!root.getAttribute("data-theme") && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    root.setAttribute("data-theme", dark ? "light" : "dark");
+  });
+})();
+</script>
+</body>
+</html>

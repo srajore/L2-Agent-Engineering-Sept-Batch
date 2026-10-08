@@ -1,0 +1,716 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day 18: Agent 2 (Design → Code → Test) | Start Here</title>
+<style>
+:root {
+  --bg: #f6f7f9; --card: #ffffff; --ink: #1c2330; --muted: #5b6577; --line: #dfe3ea;
+  --brand: #1f5fd1; --brand-ink: #ffffff; --brand-soft: #e8f0fd;
+  --ok: #17803d; --ok-soft: #e5f5ea; --warn: #9a5b00; --warn-soft: #fff3dc;
+  --code-bg: #101826; --code-ink: #e6edf7; --code-head: #1a2538; --code-line: #2a3750;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f141c; --card: #171e29; --ink: #e6ebf3; --muted: #9aa5b8; --line: #2a3445;
+    --brand: #6ea2ff; --brand-ink: #0b1220; --brand-soft: #1b2a45;
+    --ok: #5ed38a; --ok-soft: #14301f; --warn: #f3b95f; --warn-soft: #382a0f;
+    --code-bg: #0a0f18; --code-head: #131b2a; --code-line: #26324a;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f141c; --card: #171e29; --ink: #e6ebf3; --muted: #9aa5b8; --line: #2a3445;
+  --brand: #6ea2ff; --brand-ink: #0b1220; --brand-soft: #1b2a45;
+  --ok: #5ed38a; --ok-soft: #14301f; --warn: #f3b95f; --warn-soft: #382a0f;
+  --code-bg: #0a0f18; --code-head: #131b2a; --code-line: #26324a;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 16px; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.hero { background: linear-gradient(135deg, #17408f, #1f5fd1 60%, #3a7be8); color: #fff; padding: 36px 16px 30px; }
+.hero-inner { max-width: 1120px; margin: 0 auto; }
+.eyebrow { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; opacity: .85; font-weight: 600; }
+.hero h1 { margin: 6px 0 12px; font-size: clamp(26px, 4.5vw, 40px); line-height: 1.15; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.28); padding: 3px 12px; border-radius: 99px; font-size: 14px; }
+.toolbar { max-width: 1120px; margin: 0 auto; padding: 0 16px; display: flex; justify-content: flex-end; gap: 8px; }
+.layout { max-width: 1120px; margin: 0 auto; padding: 24px 16px 64px; display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 32px; }
+nav.toc { position: sticky; top: 16px; align-self: start; max-height: calc(100vh - 32px); overflow: auto; font-size: 14px; }
+nav.toc .label { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 700; margin-bottom: 8px; }
+nav.toc a { display: block; padding: 6px 10px; border-left: 3px solid var(--line); color: var(--muted); text-decoration: none; }
+nav.toc a:hover, nav.toc a.active { color: var(--brand); border-left-color: var(--brand); background: var(--brand-soft); }
+main { min-width: 0; }
+main > p:first-child { font-size: 18px; }
+h2 { margin: 40px 0 12px; padding-top: 8px; font-size: 24px; line-height: 1.25; border-top: 1px solid var(--line); }
+main > h2:first-of-type { border-top: 0; margin-top: 8px; }
+h3 { margin: 24px 0 8px; font-size: 18px; }
+p, li { max-width: 78ch; }
+a { color: var(--brand); }
+hr { border: 0; border-top: 1px solid var(--line); margin: 28px 0; }
+code { font: 0.9em ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; background: var(--brand-soft); padding: 1px 6px; border-radius: 5px; }
+.tablewrap { overflow-x: auto; margin: 14px 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+th, td { padding: 9px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+th { background: var(--brand-soft); font-weight: 650; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.fill { min-width: 90px; background: color-mix(in srgb, var(--warn-soft) 55%, transparent); cursor: text; }
+td.fill:focus { outline: 2px solid var(--brand); outline-offset: -2px; background: var(--card); }
+li.task { list-style: none; margin-left: -1.3em; }
+li.task input { margin-right: 8px; width: 17px; height: 17px; vertical-align: -3px; accent-color: var(--ok); }
+li.task label { cursor: pointer; }
+li.task:has(input:checked) { color: var(--muted); text-decoration: line-through; }
+.code { margin: 14px 0; border-radius: var(--radius); overflow: hidden; background: var(--code-bg); border: 1px solid var(--code-line); }
+.code-head { display: flex; align-items: center; gap: 10px; padding: 7px 8px 7px 14px; background: var(--code-head); border-bottom: 1px solid var(--code-line); color: #c3cee0; font-size: 13px; }
+.code-head .tag { font-weight: 700; text-transform: uppercase; letter-spacing: .08em; font-size: 11px; background: #2d4b86; color: #fff; padding: 2px 8px; border-radius: 5px; }
+.code-cmd .tag { background: #1d6b45; }
+.code-output .tag, .code-plain .tag { background: #4a5468; }
+.code-head .hint { flex: 1; min-width: 0; opacity: .85; }
+.copy { appearance: none; border: 1px solid #4d6aa3; background: #25427a; color: #fff; font: 600 13px system-ui, sans-serif; padding: 5px 14px; border-radius: 7px; cursor: pointer; }
+.copy:hover { background: #2f55a1; }
+.copy:focus-visible { outline: 2px solid #9cc0ff; outline-offset: 2px; }
+.copy.done { background: #1f7a45; border-color: #3fae6e; }
+.code pre { margin: 0; padding: 14px 16px; overflow-x: auto; color: var(--code-ink); font: 13.5px/1.55 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; white-space: pre; }
+.code code { background: none; padding: 0; font: inherit; color: inherit; }
+blockquote { margin: 14px 0; padding: 10px 16px; background: var(--warn-soft); border-left: 4px solid var(--warn); border-radius: 0 var(--radius) var(--radius) 0; }
+blockquote p { margin: 4px 0; }
+.btn { appearance: none; border: 1px solid var(--line); background: var(--card); color: var(--ink); padding: 6px 12px; border-radius: 8px; font: 600 13px system-ui, sans-serif; cursor: pointer; margin-top: -18px; position: relative; }
+.btn:hover { border-color: var(--brand); color: var(--brand); }
+strong { font-weight: 650; }
+@media (max-width: 860px) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  nav.toc { min-width: 0; max-width: 100%; }
+  .code-head .hint { display: none; }
+  .code-head .copy { margin-left: auto; }
+  nav.toc { position: static; max-height: none; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; padding-bottom: 6px; }
+  nav.toc .label { display: none; }
+  nav.toc a { white-space: nowrap; border: 1px solid var(--line); border-radius: 99px; background: var(--card); padding: 6px 12px; }
+}
+@media print {
+  body { background: #fff; color: #000; font-size: 11pt; }
+  .hero { background: #fff; color: #000; padding: 0 0 8px; border-bottom: 2px solid #000; }
+  .chip { border-color: #999; color: #000; background: none; }
+  nav.toc, .toolbar, .copy { display: none; }
+  .layout { display: block; padding: 8px 0; }
+  .code { break-inside: avoid; background: #f3f3f3; border-color: #bbb; }
+  .code pre { color: #000; white-space: pre-wrap; }
+  .code-head { background: #e4e4e4; color: #000; }
+  .tablewrap { overflow: visible; }
+  h2 { break-after: avoid; }
+}
+</style>
+</head>
+<body>
+<header class="hero"><div class="hero-inner">
+  <div class="eyebrow">Day 18 &middot; Start here</div>
+  <h1>Agent 2 (Design → Code → Test)</h1>
+  <div class="chips"><span class="chip">About 100 min</span><span class="chip">You write no code</span><span class="chip">Specify &rarr; verify &rarr; accept</span></div>
+</div></header>
+<div class="toolbar"><button class="btn" id="theme" type="button">Toggle light/dark</button><button class="btn" id="print" type="button">Print</button></div>
+<div class="layout">
+<nav class="toc" aria-label="On this page"><div class="label">On this page</div>
+<a href="#1-the-concept-10-min">1. The concept (10 min)</a>
+<a href="#2-plan-first-10-min">2. Plan first (10 min)</a>
+<a href="#3-build-and-run-15-min">3. Build and run (15 min)</a>
+<a href="#4-tests-15-min">4. Tests (15 min)</a>
+<a href="#5-do-the-tests-protect-you-12-min">5. Do the tests protect you? (12 min)</a>
+<a href="#6-break-it-on-purpose-10-min">6. Break it on purpose (10 min)</a>
+<a href="#7-claude-code-feature-hook-23-min">7. Claude Code feature: hook (23 min)</a>
+<a href="#8-decide-and-wrap-up-5-min">8. Decide and wrap up (5 min)</a>
+<a href="#appendix-extra-tests-scope-checks-subagent-and-hand-in-sheet-homework-or-spare-time">Appendix: extra tests, scope checks, subagent and hand-in sheet (homework or spare time)</a>
+</nav>
+<main>
+<p><strong>This is the only file you need today.</strong> By the end, <code>my_agent2.py</code> is built by Claude Code and running.</p>
+<p><strong>Your role:</strong> you write no code. Today's question is harder: <em>can I trust what the AI wrote?</em></p>
+<p><strong>Before you start:</strong> complete the "Before you start" table at the top of the Day 17 <code>START-HERE.md</code> (Claude Code installed, <code>ollama signin</code>, <code>uv sync</code>). Today's agent doesn't need anything Claude built on Day 17. If you skipped Day 17, you can still do all of Day 18.</p>
+<p><strong>Setup (2 windows, both in the course folder):</strong></p>
+<ul>
+<li>Window 1: <code>ollama launch claude --model nemotron-3-ultra:cloud</code>. This is where you paste prompts.</li>
+<li>Window 2: plain Command Prompt. This is where you run the agent.</li>
+</ul>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Min</th>
+<th>Part</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0–10</td>
+<td>1. The concept</td>
+</tr>
+<tr>
+<td>10–20</td>
+<td>2. Plan (Prompt 1)</td>
+</tr>
+<tr>
+<td>20–35</td>
+<td>3. Build and run (Prompt 2)</td>
+</tr>
+<tr>
+<td>35–50</td>
+<td>4. Tests</td>
+</tr>
+<tr>
+<td>50–62</td>
+<td>5. Do the tests protect you?</td>
+</tr>
+<tr>
+<td>62–72</td>
+<td>6. Break it</td>
+</tr>
+<tr>
+<td>72–95</td>
+<td>7. Claude Code feature: hook</td>
+</tr>
+<tr>
+<td>95–100</td>
+<td>8. Decide, wrap-up</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="1-the-concept-10-min">1. The concept (10 min)</h2>
+<div class="code code-plain"><div class="code-head"><span class="tag">Diagram</span><span class="hint"></span></div><pre><code>User story --&gt; tests first --&gt; test data --&gt; code --&gt; run in a separate process --&gt; explain --&gt; human yes
+</code></pre></div>
+<p>Agent 2 writes a function <code>validate_leave_request(start_date, end_date, balance_days) -&gt; (True, "") or (False, "&lt;reason&gt;")</code>.</p>
+<p>Ideas to teach:</p>
+<ul>
+<li><strong>Tests first.</strong> The tests describe correct behaviour before any code exists.</li>
+<li><strong>Test data:</strong> a table of 5 to 8 cases, checked by Python (valid and invalid, real dates).</li>
+<li><strong>Safe execution:</strong> model-written code runs only in a <strong>separate process with a timeout</strong> (15 s), never inside the agent.</li>
+<li><strong>Fake tests:</strong> tests that define the function themselves pass without testing anything, so Python must reject them.</li>
+<li><strong>Bounded retry:</strong> at most 3 attempts, then stop.</li>
+<li><strong>Explain before approve:</strong> a plain-English summary is shown before the human decides.</li>
+<li><strong>The key question:</strong> green tests mean nothing if they'd also pass on wrong code. You'll prove otherwise in Part 5.</li>
+</ul>
+<hr />
+<h2 id="2-plan-first-10-min">2. Plan first (10 min)</h2>
+<p>In Window 1 press <strong>Shift+Tab until plan mode is on</strong>, then paste:</p>
+<div class="code code-text"><div class="code-head"><span class="tag">Prompt</span><span class="hint">Paste into Claude Code (Window 1)</span><button class="copy" type="button" aria-label="Copy to clipboard">Copy</button></div><pre><code>Create ONE new file: Day-18-SDLC-Agent-2-Design-Code-Test\my_agent2.py,
+a LangGraph development assistant.
+
+Goal: from a user story and a fixed function spec, generate tests first, then a test-data
+table, then code; validate all of them; refine on failure; then explain the final code in
+plain English and ask a human to approve.
+Function spec: validate_leave_request(start_date, end_date, balance_days) -&gt; tuple.
+Dates are YYYY-MM-DD. days = (end - start) + 1. Return (True, &quot;&quot;) when valid; return
+(False, &quot;&lt;reason&gt;&quot;) when end is before start or days exceed balance_days.
+LangGraph facts (use exactly this API):
+- Imports: from typing import TypedDict; from langgraph.graph import StateGraph, START, END;
+  from langgraph.checkpoint.memory import InMemorySaver; from langgraph.types import Command, interrupt.
+- The state is a TypedDict class (total=False), passed as StateGraph(StateClass). A node is a
+  function that takes state and returns a dict of updates: builder.add_node(&quot;name&quot;, fn).
+- Edges: builder.add_edge(START, &quot;a&quot;). Routing: builder.add_conditional_edges(&quot;a&quot;, route_fn,
+  {&quot;label&quot;: &quot;next_node&quot;, &quot;other&quot;: END}), where route_fn(state) returns one of the labels. Use no
+  other arguments.
+- Compile with graph = builder.compile(checkpointer=InMemorySaver()). Run with
+  config = {&quot;configurable&quot;: {&quot;thread_id&quot;: &quot;t1&quot;}}: graph.invoke(state, config=config) runs until a node
+  calls interrupt(&quot;question&quot;); ask yes/no with input(), then
+  graph.invoke(Command(resume=answer.lower() == &quot;yes&quot;), config=config).
+- A node that calls interrupt() runs again from its start on resume, so put interrupt() in its own
+  small node and print nothing before it.
+- The value passed to Command(resume=...) is what interrupt(...) returns inside that node. Store it in
+  state: approved = interrupt(&quot;question&quot;); return {&quot;approved&quot;: approved}. Route on state[&quot;approved&quot;].
+- Model replies may wrap JSON in markdown fences: strip them before json.loads.
+Constraints: one file, direct ollama.chat with model gpt-oss:120b-cloud, no LangChain,
+no pytest, explicit conditional edges, at most 3 attempts. Run model-generated code ONLY
+in a subprocess with a timeout of 15 seconds, never inside this process.
+Validation must reject tests that define the function themselves, because those pass
+without testing anything. Tests must have at least 4 assert statements.
+Test data: the model returns a JSON list of 5 to 8 cases with name, start, end, balance and
+expect_valid. Plain Python checks it: at least 4 cases, both valid and invalid outcomes, and
+real dates (an unreal date is allowed only in a case that expects invalid). Run every case
+against the code in the same subprocess as the asserts. Retry bad test data up to 3 times.
+Explanation: after the tests pass, the model explains the code in 3 to 6 short plain-English
+lines for a non-programmer, and the program prints it before the approval question.
+When the file is run (no arguments, no typing except the yes/no answer) it prints
+&quot;Generated code:&quot;, &quot;Generated tests:&quot;, &quot;Test data:&quot; (one line per case), &quot;Explanation of the code:&quot;,
+and &quot;Validation after N attempt(s): ALL TESTS PASSED&quot; (or the failure reason). Then it asks
+&quot;Approve this code and tests? (yes/no): &quot; with input(). On yes it prints &quot;Status: Code and tests approved&quot;.
+On no it prints &quot;Status: Stopped: human rejected the code&quot;. If all 3 attempts fail it prints
+&quot;All attempts exhausted&quot; with the last failure reason. Print the reason every time validation fails.
+The file must actually call the graph under if __name__ == &quot;__main__&quot;.
+Make a short plan first (under 15 lines). Do not explore other folders or use research helpers.
+Do not edit files yet.
+</code></pre></div>
+<p><strong>Approve the plan only if it has all of these:</strong></p>
+<ul>
+<li class="task"><label><input type="checkbox"> Tests generated <strong>before</strong> the code</label></li>
+<li class="task"><label><input type="checkbox"> Generated code runs in a <strong>subprocess with a timeout</strong></label></li>
+<li class="task"><label><input type="checkbox"> A check that tests don't define the function, and have 4+ asserts</label></li>
+<li class="task"><label><input type="checkbox"> A test-data step with a Python check; the cases run against the code</label></li>
+<li class="task"><label><input type="checkbox"> A step that <strong>explains the code</strong> before the approval</label></li>
+<li class="task"><label><input type="checkbox"> A retry limit of 3 and a stop route</label></li>
+<li class="task"><label><input type="checkbox"> A human approval step</label></li>
+<li class="task"><label><input type="checkbox"> One file; no pytest; no LangChain</label></li>
+</ul>
+<hr />
+<h2 id="3-build-and-run-15-min">3. Build and run (15 min)</h2>
+<p>Approve the plan, then paste:</p>
+<div class="code code-text"><div class="code-head"><span class="tag">Prompt</span><span class="hint">Paste into Claude Code (Window 1)</span><button class="copy" type="button" aria-label="Copy to clipboard">Copy</button></div><pre><code>Implement the plan. Do not run the program yourself: it stops to ask me to type yes or no,
+and you cannot type for me. When the file is written, check that it compiles with
+uv run python -m py_compile Day-18-SDLC-Agent-2-Design-Code-Test\my_agent2.py and fix any error.
+Then tell me the exact command to run.
+</code></pre></div>
+<p><strong>Run it in Window 2</strong> and type <code>yes</code> at the approval prompt:</p>
+<div class="code code-cmd"><div class="code-head"><span class="tag">Command</span><span class="hint">Run in Command Prompt (Window 2)</span><button class="copy" type="button" aria-label="Copy to clipboard">Copy</button></div><pre><code>uv run python Day-18-SDLC-Agent-2-Design-Code-Test\my_agent2.py
+</code></pre></div>
+<p><strong>The agent is now up and running.</strong></p>
+<p><em>If the build fails or stalls for more than 5 minutes:</em> tell your trainer. Don't keep retrying the same prompt. Send Claude Code one precise fix request instead (see the examples in Part 4).</p>
+<hr />
+<h2 id="4-tests-15-min">4. Tests (15 min)</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Test</th>
+<th>Pass when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>B1</td>
+<td>Run, answer <code>yes</code></td>
+<td>Code, tests, "ALL TESTS PASSED", status approved</td>
+</tr>
+<tr>
+<td>B2</td>
+<td>Read the <code>assert</code> lines</td>
+<td>They cover: valid, exactly at balance, over balance, end before start</td>
+</tr>
+<tr>
+<td>B5</td>
+<td>Read the test-data table</td>
+<td>5–8 cases, valid and invalid, includes exact-balance, over-balance, end-before-start</td>
+</tr>
+<tr>
+<td>B6</td>
+<td>Read the explanation</td>
+<td>3–6 plain lines, printed <strong>before</strong> the approval question, mentions the end-date rule and the balance rule</td>
+</tr>
+<tr>
+<td>B4</td>
+<td>Run again, answer <code>no</code></td>
+<td>Status says rejected</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Fix loop (read this once):</strong> the first build often has a bug. Send Claude Code <strong>one short message</strong> naming the failed test and what you saw. After every fix, <strong>re-run all the tests</strong>, not just the one that failed, because a fix can quietly break something that passed. Long, detailed fix messages can make Claude Code remove features. If it says "it works" or "it compiles" but shows no output, reply: <code>You said it works but did not run it. Run it and show me the output.</code> If two fixes don't work, ask your trainer.</p>
+<p>If a test fails, <strong>reject</strong>. Name the test, quote what you saw, and ask for one fix, for example:
+<code>Test B6 failed: there is no explanation before the approval question. Add the explain step and print it.</code></p>
+<hr />
+<h2 id="5-do-the-tests-protect-you-12-min">5. Do the tests protect you? (12 min)</h2>
+<p>This is the most important test of the day. Paste in Window 1:</p>
+<div class="code code-text"><div class="code-head"><span class="tag">Prompt</span><span class="hint">Paste into Claude Code (Window 1)</span><button class="copy" type="button" aria-label="Copy to clipboard">Copy</button></div><pre><code>Take the generated function and make a copy with the &quot;end date before start date&quot; check removed.
+Run the SAME generated tests against that broken copy and show me the output.
+Then delete the broken copy. Do not change the real file.
+</code></pre></div>
+<ul>
+<li><strong>Accept when:</strong> at least one test <strong>fails</strong> against the broken copy.</li>
+<li><strong>Reject when:</strong> all tests still pass (the tests are weak). Say: <code>The tests did not catch the bug. Strengthen the test generation so the end-before-start case is covered, then repeat this check.</code></li>
+</ul>
+<hr />
+<h2 id="6-break-it-on-purpose-10-min">6. Break it on purpose (10 min)</h2>
+<p>Paste each in Window 1:</p>
+<div class="code code-text"><div class="code-head"><span class="tag">Prompt</span><span class="hint">Paste into Claude Code (Window 1)</span><button class="copy" type="button" aria-label="Copy to clipboard">Copy</button></div><pre><code>Temporarily make the tests contain a copy of the function definition, run the agent, show me
+the output, then restore the original.
+</code></pre></div>
+<p><strong>Accept when:</strong> the agent rejects those tests and does not report a pass.</p>
+<div class="code code-text"><div class="code-head"><span class="tag">Prompt</span><span class="hint">Paste into Claude Code (Window 1)</span><button class="copy" type="button" aria-label="Copy to clipboard">Copy</button></div><pre><code>Temporarily make the generated code always wrong, run the agent and show me the output, then
+restore it. I need to see exactly 3 attempts and then a stop.
+</code></pre></div>
+<p><strong>Accept when:</strong> exactly 3 attempts and a stop message, and the file is restored.</p>
+<p><em>(Optional, in the appendix: the infinite-loop test. The run should end by itself after about 15 seconds with a timeout message.)</em></p>
+<hr />
+<h2 id="7-claude-code-feature-hook-23-min">7. Claude Code feature: hook (23 min)</h2>
+<p><strong>Concept.</strong> On Day 17 you measured that a rule is followed <em>most</em> of the time. A <strong>hook</strong> is a small program Claude Code runs automatically <em>before</em> an action, and it can <strong>block</strong> it (exit code 2). A rule asks politely. A hook says no every time.</p>
+<p>Today's guard blocks any edit or write when (a) the file is named <code>example.py</code> or <code>chain.py</code> (the course's reference answers, which Claude Code must not overwrite), or (b) the file is in a <code>Day-</code> folder other than today's.</p>
+<blockquote>
+<p>Claude Code will ask permission before writing in <code>.claude</code>. Check the path and allow it.</p>
+</blockquote>
+<p>Plan mode, paste, then approve:</p>
+<div class="code code-text"><div class="code-head"><span class="tag">Prompt</span><span class="hint">Paste into Claude Code (Window 1)</span><button class="copy" type="button" aria-label="Copy to clipboard">Copy</button></div><pre><code>Create exactly three files for a hook guard, and nothing else. Each file's content is the text
+between its START and END lines, character for character (not including those lines). Do not add,
+remove, reword or &quot;improve&quot; anything, and do not copy anything from any other settings file. If
+.claude\settings.json already exists, change only its &quot;hooks&quot; key and keep everything else.
+
+FILE 1: .claude\active-day.txt
+START
+Day-18-SDLC-Agent-2-Design-Code-Test
+END
+
+FILE 2: .claude\hooks\guard.py
+START
+import json
+import os
+import sys
+
+# Runs before every Edit or Write. Exit code 2 blocks the action and
+# sends the stderr message back to Claude Code.
+data = json.loads(sys.stdin.buffer.read().decode(&quot;utf-8-sig&quot;))
+path = data.get(&quot;tool_input&quot;, {}).get(&quot;file_path&quot;, &quot;&quot;)
+project = os.environ.get(&quot;CLAUDE_PROJECT_DIR&quot;, os.getcwd())
+
+# Work out the path relative to the project, with forward slashes
+try:
+    rel = os.path.relpath(path, project).replace(os.sep, &quot;/&quot;)
+except ValueError:
+    sys.exit(0)
+name = rel.split(&quot;/&quot;)[-1]
+top = rel.split(&quot;/&quot;)[0]
+
+with open(os.path.join(project, &quot;.claude&quot;, &quot;active-day.txt&quot;)) as f:
+    active = f.read().strip()
+
+if name in (&quot;example.py&quot;, &quot;chain.py&quot;):
+    print(&quot;BLOCKED: example.py and chain.py are the course's reference files. Do not edit them.&quot;, file=sys.stderr)
+    sys.exit(2)
+
+if top.startswith(&quot;Day-&quot;) and top != active:
+    print(f&quot;BLOCKED: today's folder is {active}. Do not edit {top}.&quot;, file=sys.stderr)
+    sys.exit(2)
+
+sys.exit(0)
+END
+
+FILE 3: .claude\settings.json
+START
+{
+  &quot;hooks&quot;: {
+    &quot;PreToolUse&quot;: [
+      {
+        &quot;matcher&quot;: &quot;Edit|Write&quot;,
+        &quot;hooks&quot;: [
+          { &quot;type&quot;: &quot;command&quot;, &quot;command&quot;: &quot;uv run python .claude/hooks/guard.py&quot; }
+        ]
+      }
+    ]
+  }
+}
+END
+Then show me the three files.
+</code></pre></div>
+<p>Plan is OK only if it creates exactly those three things, uses <code>PreToolUse</code> with matcher <code>Edit|Write</code>, blocks by <strong>exit code 2</strong>, and changes nothing else.</p>
+<p><strong>Restart <code>claude</code></strong>, accept the trust dialog, then test:</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Ask Claude Code</th>
+<th>Pass when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>H1</td>
+<td><code>/hooks</code></td>
+<td>A PreToolUse hook for Edit/Write is listed</td>
+</tr>
+<tr>
+<td>H2</td>
+<td><code>Create Day-18-SDLC-Agent-2-Design-Code-Test\hook_ok.txt containing hello.</code></td>
+<td>File created</td>
+</tr>
+<tr>
+<td>H3</td>
+<td><code>Create a file named example.py in Day-18-SDLC-Agent-2-Design-Code-Test containing a print line.</code></td>
+<td><strong>Refused</strong> with the guard's message</td>
+</tr>
+<tr>
+<td>H4</td>
+<td><code>Create Day-17-SDLC-Agent-1-Requirements-Design\hook_no.txt containing hi.</code></td>
+<td><strong>Refused</strong>: today's folder is Day-18</td>
+</tr>
+</tbody>
+</table></div>
+<p>Then ask Claude Code to delete <code>hook_ok.txt</code>.</p>
+<hr />
+<h2 id="8-decide-and-wrap-up-5-min">8. Decide and wrap up (5 min)</h2>
+<p>Write <strong>ACCEPT</strong> or <strong>REJECT</strong> with one line of evidence. Accept only if B1–B6, the broken-copy check, the two break-it tests and H1–H4 passed.</p>
+<p><strong>Homework (optional):</strong> the read-only reviewer subagent, the infinite-loop test and the scope checks. All are in the appendix below.</p>
+<p>You're ready for Day 19 if you can explain why a hook beats a rule, and why green tests can still be useless.</p>
+<hr />
+<h2 id="appendix-extra-tests-scope-checks-subagent-and-hand-in-sheet-homework-or-spare-time">Appendix: extra tests, scope checks, subagent and hand-in sheet (homework or spare time)</h2>
+<p><strong>Extra tests</strong></p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Test</th>
+<th>Pass when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>B3</td>
+<td>Read the tests: you see <strong>no</strong> <code>def validate_leave_request</code>, only calls to it</td>
+<td>Pass</td>
+</tr>
+<tr>
+<td>Infinite loop</td>
+<td>Paste: <code>Temporarily make the generated code loop forever, run the agent, then restore it.</code></td>
+<td>The run ends by itself with a timeout message after about 15 seconds. It does not hang</td>
+</tr>
+<tr>
+<td>H5</td>
+<td>Ask Claude Code to change <code>active-day.txt</code> to the Day 17 folder name, then repeat H4</td>
+<td>Now allowed. Change it back to the Day 18 name afterwards</td>
+</tr>
+<tr>
+<td>H6</td>
+<td>Ask Claude Code to read <code>pyproject.toml</code> and say how many lines it has</td>
+<td>It answers (the guard only watches edits and writes)</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Scope checks.</strong> Run in Window 2:</p>
+<div class="code code-cmd"><div class="code-head"><span class="tag">Command</span><span class="hint">Run in Command Prompt (Window 2)</span><button class="copy" type="button" aria-label="Copy to clipboard">Copy</button></div><pre><code>dir Day-18-SDLC-Agent-2-Design-Code-Test
+findstr /i /c:&quot;langchain&quot; /c:&quot;pytest&quot; Day-18-SDLC-Agent-2-Design-Code-Test\my_agent2.py
+findstr /c:&quot;subprocess&quot; /c:&quot;timeout&quot; Day-18-SDLC-Agent-2-Design-Code-Test\my_agent2.py
+findstr /c:&quot;eval(&quot; /c:&quot;exec(&quot; Day-18-SDLC-Agent-2-Design-Code-Test\my_agent2.py
+</code></pre></div>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Pass when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dir</code></td>
+<td>Only <code>my_agent2.py</code> was added</td>
+</tr>
+<tr>
+<td><code>langchain</code> / <code>pytest</code></td>
+<td>No output</td>
+</tr>
+<tr>
+<td><code>subprocess</code> / <code>timeout</code></td>
+<td>Lines found for both</td>
+</tr>
+<tr>
+<td><code>eval(</code> / <code>exec(</code></td>
+<td>No output</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>A hit can be a false alarm.</strong> <code>findstr</code> reads text only. If <code>langchain</code> or <code>pytest</code> appears only inside a comment or inside a prompt telling the model <em>not</em> to use it, nothing is wrong, but the check still fails. Ask Claude Code to remove the word, or note it on your sheet and accept.</p>
+<p><strong>Subagent: a read-only specialist.</strong> Concept: a subagent is a helper with its own focus and a short list of allowed tools. A reviewer with only Read, Grep and Glob can't change anything even if it wants to. Plan mode, paste, then approve:</p>
+<div class="code code-text"><div class="code-head"><span class="tag">Prompt</span><span class="hint">Paste into Claude Code (Window 1)</span><button class="copy" type="button" aria-label="Copy to clipboard">Copy</button></div><pre><code>Create the subagent .claude\agents\agent-reviewer.md.
+Header: name agent-reviewer; description: read-only reviewer that tries to find ways an agent
+file could fail; tools: Read, Grep, Glob only; model sonnet.
+Body: you are a strict read-only reviewer of small LangGraph agent files and never edit files.
+Read the file you are given and report a numbered list of at most 5 items: the most likely ways
+it could fail or be unsafe (missing validation, no retry limit, no human approval, unbounded
+loop, model output trusted without checks). For each item, say how a person could test it
+without reading code. End with the line REVIEWER: DONE.
+Show me the file.
+</code></pre></div>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Test</th>
+<th>Pass when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SA1</td>
+<td>Read the file</td>
+<td><code>tools</code> lists only Read, Grep, Glob; it says it never edits</td>
+</tr>
+<tr>
+<td>SA2</td>
+<td><code>Use the agent-reviewer subagent to review Day-18-SDLC-Agent-2-Design-Code-Test\my_agent2.py</code></td>
+<td>Numbered list of at most 5 items, each with a way to test it, ending <code>REVIEWER: DONE</code></td>
+</tr>
+<tr>
+<td>SA3</td>
+<td><code>Use the agent-reviewer subagent to fix the problems it found in my_agent2.py.</code></td>
+<td>The file does <strong>not</strong> change (it has no edit tool)</td>
+</tr>
+<tr>
+<td>SA4</td>
+<td>Turn one finding into a break-it prompt and run it</td>
+<td>You have a new test you did not have before</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Hand-in sheet</strong></p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Pass / Fail</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>B1</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>B2</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>B3</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>B4</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>B5 (test data)</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>B6 (explanation)</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Broken copy fails a test</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Break-it: fake tests rejected</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Break-it: 3 attempts then stop</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Break-it: infinite loop times out</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Scope checks</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Hook H1–H4 (paste the guard's message for H3)</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Hook H5–H6</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Subagent SA1–SA4</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Decision</strong></td>
+<td>ACCEPT / REJECT</td>
+<td>One sentence why</td>
+</tr>
+</tbody>
+</table></div>
+</main>
+</div>
+<script>
+(function () {
+  var KEY = "Day-18-SDLC-Agent-2-Design-Code-Test";
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { return {}; } }
+  function save(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} }
+  var state = load();
+
+  /* Copy buttons */
+  function legacyCopy(text) {
+    return new Promise(function (resolve, reject) {
+      var ta = document.createElement("textarea");
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (e) {}
+      document.body.removeChild(ta);
+      ok ? resolve() : reject();
+    });
+  }
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext !== false) {
+      return navigator.clipboard.writeText(text).catch(function () { return legacyCopy(text); });
+    }
+    return legacyCopy(text);
+  }
+  document.querySelectorAll(".code .copy").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var code = btn.closest(".code").querySelector("code").innerText.replace(/\n$/, "");
+      copyText(code).then(function () {
+        btn.textContent = "Copied \u2713"; btn.classList.add("done");
+      }, function () {
+        btn.textContent = "Press Ctrl+C"; var r = document.createRange();
+        r.selectNodeContents(btn.closest(".code").querySelector("code"));
+        var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      });
+      setTimeout(function () { btn.textContent = "Copy"; btn.classList.remove("done"); }, 1800);
+    });
+  });
+
+  /* Tick-boxes remember their state */
+  document.querySelectorAll("li.task input").forEach(function (box, i) {
+    var k = "c" + i; box.checked = !!state[k];
+    box.addEventListener("change", function () { state[k] = box.checked; save(state); });
+  });
+
+  /* Empty table cells (hand-in sheet) become fillable */
+  document.querySelectorAll("td").forEach(function (td, i) {
+    if (td.textContent.trim() !== "") return;
+    var k = "t" + i; td.classList.add("fill"); td.contentEditable = "true";
+    td.setAttribute("aria-label", "Fill in");
+    if (state[k]) td.textContent = state[k];
+    td.addEventListener("input", function () { state[k] = td.textContent; save(state); });
+  });
+
+  /* Highlight the section being read */
+  var links = Array.prototype.slice.call(document.querySelectorAll("nav.toc a"));
+  var map = {}; links.forEach(function (a) { map[a.getAttribute("href").slice(1)] = a; });
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting && map[e.target.id]) {
+          links.forEach(function (a) { a.classList.remove("active"); });
+          map[e.target.id].classList.add("active");
+        }
+      });
+    }, { rootMargin: "0px 0px -70% 0px" });
+    document.querySelectorAll("main h2").forEach(function (h) { io.observe(h); });
+  }
+
+  /* Theme + print */
+  document.getElementById("print").addEventListener("click", function () { window.print(); });
+  document.getElementById("theme").addEventListener("click", function () {
+    var root = document.documentElement;
+    var dark = root.getAttribute("data-theme") === "dark" ||
+      (!root.getAttribute("data-theme") && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    root.setAttribute("data-theme", dark ? "light" : "dark");
+  });
+})();
+</script>
+</body>
+</html>
